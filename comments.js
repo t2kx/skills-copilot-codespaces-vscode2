@@ -1,65 +1,44 @@
-// create web server
-// 1. load the http module
-var http = require('http');
-var fs = require('fs');
-var url = require('url');
-var queryString = require('querystring');
-var comments = [];
-// 2. create web server
-var server = http.createServer(function (req, res) {
-    // 2.1 set the content type
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    // 2.2 parse the url
-    var urlObj = url.parse(req.url, true);
-    var pathName = urlObj.pathname;
-    // 2.3 handle different paths
-    if (pathName === '/') {
-        fs.readFile('./views/index.html', function (err, data) {
-            if (err) {
-                throw err;
-            }
-            res.end(data);
-        });
-    } else if (pathName === '/post') {
-        fs.readFile('./views/post.html', function (err, data) {
-            if (err) {
-                throw err;
-            }
-            res.end(data);
-        });
-    } else if (pathName === '/comment') {
-        // 2.3.1 get the comment
-        var comment = urlObj.query;
-        comment.dateTime = new Date();
-        comments.push(comment);
-        // 2.3.2 redirect to the home page
-        res.statusCode = 302;
-        res.setHeader('Location', '/');
-        res.end();
-    } else if (pathName === '/getComments') {
-        // 2.3.3 return the comments
-        var commentsStr = JSON.stringify(comments);
-        res.end(commentsStr);
-    } else {
-        fs.readFile('./views/notFound.html', function (err, data) {
-            if (err) {
-                throw err;
-            }
-            res.end(data);
-        });
-    }
+// Create web server
+// Create a web server that can accept requests for comments and post comments to the server. The server should be able to handle multiple requests at the same time. 
+// The server should only accept requests to POST /comments and GET /comments. 
+// The POST request should expect a body containing a JSON object in the following format: {comment: "This is a comment"}. 
+// This object should be added to an array of comments. 
+// The server should respond with a 201 status code if the comment is successfully added. 
+// The GET request should respond with an array of comments in JSON format. 
+// The server should respond to all requests with the appropriate status code. 
+// If a request is made to a path that does not exist, the server should respond with a 404 status code.
+
+const http = require('http');
+const url = require('url');
+const { parse } = require('querystring');
+
+const comments = [];
+
+const server = http.createServer((req, res) => {
+  const { method, url: reqUrl } = req;
+  const parsedUrl = url.parse(reqUrl, true);
+  const { pathname } = parsedUrl;
+
+  if (method === 'POST' && pathname === '/comments') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      const comment = parse(body).comment;
+      comments.push(comment);
+      res.writeHead(201);
+      res.end();
+    });
+  } else if (method === 'GET' && pathname === '/comments') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(comments));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
 });
-// 3. listen to the port
-server.listen(3000, function () {
-    console.log('server is running...');
+
+server.listen(3000, () => {
+  console.log('Server is running on port 3000');
 });
-// 4. create the static web server
-// 4.1 load the http module
-// 4.2 create the web server
-// 4.3 listen to the port
-// 4.4 handle different paths
-// 4.5 set the content type
-// 4.6 return the data
-// 4.7 listen to the port
-// 5. create the dynamic web server
-// 5.1 handle
